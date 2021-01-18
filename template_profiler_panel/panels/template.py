@@ -196,13 +196,52 @@ class TemplateProfilerPanel(Panel):
                 instance=instance,
                 start=start,
                 end=end,
-                processing_timeline=timeline,
+                processing_timeline=getattr(instance, '_template_timings', []) + timeline,
+                # processing_timeline=timeline,
                 level=stack_depth,
             )
             return result
 
+        @wrapt.decorator
+        def compile_nodelist_wrapper(wrapped, instance, args, kwargs):
+            _start = time()
+            result = wrapped(*args, **kwargs)
+            _end = time()
+
+            if not hasattr(instance, '_template_timings'):
+                instance._template_timings = []
+            instance._template_timings.append({
+                "type": "template_process",
+                "name": "compile_nodelist",
+                "start": _start,
+                "end": _end,
+                "level": 5,
+            })
+            return result
+
+        @wrapt.decorator
+        def _render_wrapper(wrapped, instance, args, kwargs):
+            _start = time()
+            result = wrapped(*args, **kwargs)
+            _end = time()
+
+            if not hasattr(instance, '_template_timings'):
+                instance._template_timings = []
+            instance._template_timings.append({
+                "type": "template_process",
+                "name": "_render",
+                "start": _start,
+                "end": _end,
+                "level": 6,
+            })
+            return result
+
         for template_class in template_classes:
             template_class.render = render_wrapper(template_class.render)
+            if hasattr(template_class, 'compile_nodelist'):
+                template_class.compile_nodelist = compile_nodelist_wrapper(template_class.compile_nodelist)
+            if hasattr(template_class, '_render'):
+                template_class._render = _render_wrapper(template_class._render)
 
         @wrapt.decorator
         def render_node_wrapper(wrapped, instance, args, kwargs):
