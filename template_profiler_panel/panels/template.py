@@ -157,7 +157,7 @@ class TemplateProfilerPanel(Panel):
 
     def record(self, instance, start, end, level,
                processing_timeline, **kwargs):
-        if not self.enabled:
+        if not self.is_enabled:
             return
 
         template_name = instance.name
