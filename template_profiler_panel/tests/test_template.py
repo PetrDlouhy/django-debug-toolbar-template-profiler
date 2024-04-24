@@ -20,11 +20,10 @@ from template_profiler_panel.panels.template import TemplateProfilerPanel, templ
 class TemplateProfilerPanelTestCase(unittest.TestCase):
     def setUp(self):
         super(TemplateProfilerPanelTestCase, self).setUp()
-        self.panel = TemplateProfilerPanel(MagicMock())
+        self.panel = TemplateProfilerPanel(MagicMock(), get_response=MagicMock())
         self.panel.record_stats = MagicMock()
         self.template_rendered_receiver = MagicMock()
         self.request = MagicMock()
-        self.response = MagicMock()
         template_rendered.connect(self.template_rendered_receiver)
 
     def tearDown(self):
@@ -40,7 +39,7 @@ class TemplateProfilerPanelTestCase(unittest.TestCase):
         t = Template('')
         t.render(Context({}))
 
-        self.panel.process_response(self.request, self.response)
+        self.panel.process_request(self.request)
 
         args = self.panel.record_stats.call_args[0][0]
         self.assertEqual(len(args['templates']), 0)
@@ -52,7 +51,7 @@ class TemplateProfilerPanelTestCase(unittest.TestCase):
         t = Template('')
         t.render(Context({}))
 
-        self.panel.process_response(self.request, self.response)
+        self.panel.process_request(self.request)
         self.panel.disable_instrumentation()
 
         args = self.panel.record_stats.call_args[0][0]
